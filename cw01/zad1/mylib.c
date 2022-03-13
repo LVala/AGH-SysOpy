@@ -117,7 +117,8 @@ int file_to_memory(struct Block *blocks, size_t blocks_length, temp_file_handle 
     }
     int i;
     for (i = 0; i < blocks[index].length; i++) {
-        getline(&buffer, &buffer_size, file);
+        if (getline(&buffer, &buffer_size, file) == -1)
+            break;  // in a case all of wc input files are invalid
         blocks[index].files[i].lines = strtol(strtok(buffer, " \t\n\v\f\r"), &ptr, 10);
         blocks[index].files[i].words = strtol(strtok(NULL, " \t\n\v\f\r"), &ptr, 10);
         blocks[index].files[i].chars = strtol(strtok(NULL, " \t\n\v\f\r"), &ptr, 10);
@@ -128,7 +129,7 @@ int file_to_memory(struct Block *blocks, size_t blocks_length, temp_file_handle 
         }
         strcpy(blocks[index].files[i].filename, name);
     }
-    if (getline(&buffer, &buffer_size, file) == -1 && !strcmp(name, "total")) {
+    if (getline(&buffer, &buffer_size, file) == -1 && !strcmp(name, "total") && blocks[index].length > 1) {
             // when some filenames are invalid, number of lines written to file is greater
             // than actual number of lines, which causes "total" line of wc output to be saved, which is unnecessary
             free(blocks[index].files[i-1].filename);
@@ -139,9 +140,6 @@ int file_to_memory(struct Block *blocks, size_t blocks_length, temp_file_handle 
     close(fd);
     free(buffer);
 
-    for (int i = 0; i < blocks[index].length; i++)
-        printf("%d %d %d %s\n", blocks[index].files[i].lines, blocks[index].files[i].words, blocks[index].files[i].chars, blocks[index].files[i].filename);
-
     return index;
 }
 
@@ -150,19 +148,21 @@ int free_block(struct Block *blocks, size_t length, int index) {
         fprintf(stderr, "Warning: index to free out of array bounds\n");
         return -1;
     }
-    for (int i = 0; i < blocks[index].length; i++) {
-        free(blocks[index].files[i].filename);
-    }
+    if (blocks[index].files != NULL)
+        for (int i = 0; i < blocks[index].length; i++)
+            free(blocks[index].files[i].filename);
+
     free(blocks[index].files);
     blocks[index].files = NULL;
     return 0;
 }
 
 void free_block_array(struct Block *blocks, size_t length) {
-    for (int i = 0; i < length; i++) {
-        free_block(blocks, length, i);
-    }
+    if (blocks != NULL)
+        for (int i = 0; i < length; i++)
+            free_block(blocks, length, i);
     free(blocks);
+    blocks = NULL;
 }
 
 // int main(int argc, char *argv[]) {
