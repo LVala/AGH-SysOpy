@@ -24,7 +24,7 @@ static int isnumber(const char *ptr) {
     return 1;
 }
 
-static void output_raport(char* filename, clock_t real_time_start, clock_t real_time_end, struct tms *time_start, struct tms *time_end) {
+static void output_raport(clock_t real_time_start, clock_t real_time_end, struct tms *time_start, struct tms *time_end) {
 
     FILE *ptr = fopen(RAPORT, "a");
     if (ptr == NULL) {
@@ -77,7 +77,6 @@ int run_commands(int arg_length, char *args[]) {
             }
             free_block_array(blocks, blocks_length);
             blocks = create_array(blocks_length);
-            // printf("STWORZONY BLOK\n");
             i += 2;
         }
         else if (!strcmp(args[i], "remove_block")) {
@@ -103,7 +102,6 @@ int run_commands(int arg_length, char *args[]) {
                 exit(1);
             }
             free_block(blocks, blocks_length, block_to_remove);
-            // printf("USUNIETY BLOK\n");
             i += 2;
         }
         else if (!strcmp(args[i], "wc_files")) {
@@ -124,9 +122,6 @@ int run_commands(int arg_length, char *args[]) {
             }
             temp_file_handle fd = count_to_file(j-1, &args[i+1]);
             file_to_memory(blocks, blocks_length, fd);
-            // printf("ZAPISANE: %d\n", cos);
-            // for (int i = 0; i < blocks[cos].length; i++)
-            //     printf("%d %d %d %s\n", blocks[cos].files[i].lines, blocks[cos].files[i].words, blocks[cos].files[i].chars, blocks[cos].files[i].filename);
             i += j;
 
         }
@@ -150,6 +145,6 @@ int main(int argc, char *argv[]) {
     run_commands(argc - 1, argv + 1);
     real_time_end = times(&time_end);
 
-    output_raport("raport2.txt", real_time_start, real_time_end, &time_start, &time_end);
+    output_raport(real_time_start, real_time_end, &time_start, &time_end);
     return 0;
 }
