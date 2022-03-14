@@ -1,0 +1,5 @@
+Wnioski:
+    1. W tym przypadku roznice rowniez byly marginalne, porownujac czasu dla poszczegolnych metod optymalizacji najwieksza
+       przewage osiaga opcja -O3, czego mozna bylo sie spodziewac.
+    2. Dla poszczegolnych poziomow optymalizacji stosunki pomiedzy osiagami dla roznych metod laczenia bibliotek zachowuja sie
+       analogicznie jak w zad 2a.

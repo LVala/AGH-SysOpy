@@ -1,22 +1,38 @@
 CC = gcc
 CFLAGS = -c -Wall
 MEANINGFUL_MESSAGE = systemy operacyjne to fajny przedmiot
-RAPORT = raport.txt
+RAPORT = raport3a.txt
+export LD_LIBRARY_PATH = $(shell pwd)
 
 all: test
 
-# create executable
-mylib.o: mylib.c
-	$(CC) $(CFLAGS) -o mylib.o mylib.c
-
-libmylib.a: mylib.o
-	ar cr libmylib.a mylib.o
-
 main.o: main.c
-	$(CC) $(CFLAGS) -o main.o -DRAPORT=\"$(RAPORT)\" main.c
+	$(CC) $(CFLAGS) -DRAPORT=\"$(RAPORT)\" main.c
 
-main: main.o libmylib.a
-	$(CC) main.o -o main -L. -lmylib
+# create statically linked executable
+staticmylib.o: mylib.o
+	$(CC) $(CFLAGS) -o staticmylib.o mylib.c
+
+libstaticmylib.a: staticmylib.o
+	ar csr libstaticmylib.a staticmylib.o
+
+staticmain: main.o libstaticmylib.a
+	$(CC) main.o -o main -L. -lstaticmylib
+
+# create executable with shared executable
+sharedmylib.o: mylib.c
+	$(CC) $(CFLAGS) -fPIC -o sharedmylib.o mylib.c
+
+libsharedmylib.so: sharedmylib.o
+	$(CC) -shared -fPIC -o libsharedmylib.so sharedmylib.o
+
+sharedmain: main.o libsharedmylib.so
+	$(CC) main.o -o main -L. -lsharedmylib
+
+# create dynamically linked executable
+dynamicmain: libsharedmylib.so
+	$(CC) -Wall -o main -ldl -DRAPORT=\"$(RAPORT)\" -DDYNAMIC main.c
+
 
 # create test files
 b_test.txt:
@@ -25,6 +41,7 @@ m_test.txt:
 	yes $(MEANINGFUL_MESSAGE) | head -c 1000000 > m_test.txt
 s_test.txt:
 	yes $(MEANINGFUL_MESSAGE) | head -c 100000 > s_test.txt
+
 
 # tests
 test_few_small: main b_test.txt m_test.txt s_test.txt
@@ -60,7 +77,9 @@ test_make_and_free_blocks: main b_test.txt m_test.txt s_test.txt
 	echo "CREATE AND FREE BLOCKS TEST" >> $(RAPORT)
 	./main create_table 10 `for i in {1..10}; do echo -n 'wc_files m_test.txt remove_block 0 '; done`
 
-test:
+static_test:
+	echo "----STATICALLY LINKED LIBRARY----" >> $(RAPORT)
+	make staticmain
 	make test_few_small
 	make test_many_small
 	make test_few_medium
@@ -69,7 +88,36 @@ test:
 	make test_many_big
 	make test_free_blocks
 	make test_make_and_free_blocks
+
+shared_test:
+	echo "----SHARED LIBRARY----" >> $(RAPORT)
+	make sharedmain
+	make test_few_small
+	make test_many_small
+	make test_few_medium
+	make test_many_medium
+	make test_few_big
+	make test_many_big
+	make test_free_blocks
+	make test_make_and_free_blocks
+
+dynamic_test:
+	echo "----DYNAMICALLY LINKED LIBRARY----" >> $(RAPORT)
+	make dynamicmain
+	make test_few_small
+	make test_many_small
+	make test_few_medium
+	make test_many_medium
+	make test_few_big
+	make test_many_big
+	make test_free_blocks
+	make test_make_and_free_blocks
+
+test:
+	make static_test
+	make shared_test
+	make dynamic_test
 	make clean
 
 clean:
-	rm -f *.o *.a main errorlog *_test.txt
+	rm -f *.o *.a *.so main errorlog *_test.txt

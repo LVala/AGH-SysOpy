@@ -1,0 +1,4 @@
+Wnioski:
+    1. Sposob w jaki laczona lub ladowana jest biblioteka ma marginalny wplyw na szybkosc dzialania programu.
+       Roznica dla zapisywania 100 plikow o wielkosci ok. 10MB wynosila jakies 100 ms pomiedzy poszczegolnymi metodami.
+    2. Zapisanie wszystkich blokow a nstepnie ich zwolnienie jest znacznie szybsze niz maprzemienne zapisywanie i zwalnianie.

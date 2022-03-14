@@ -1,0 +1,147 @@
+----STATICALLY LINKED LIBRARY----
+SAVE TO MEMORY TEST - FEW SMALL FILES
+Operation timing raport:
+    REAL: 0.000000 s
+    USER CPU: 0.000000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - MANY SMALL FILES
+Operation timing raport:
+    REAL: 0.010000 s
+    USER CPU: 0.000000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - FEW MEDIUM FILES
+Operation timing raport:
+    REAL: 0.010000 s
+    USER CPU: 0.010000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - MANY MEDIUM FILES
+Operation timing raport:
+    REAL: 0.040000 s
+    USER CPU: 0.030000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - FEW BIG FILES
+Operation timing raport:
+    REAL: 0.110000 s
+    USER CPU: 0.100000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - MANY BIG FILES
+Operation timing raport:
+    REAL: 0.320000 s
+    USER CPU: 0.310000 s
+    SYSTEM CPU: 0.000000 s
+
+FREE BLOCKS TEST
+Operation timing raport:
+    REAL: 0.010000 s
+    USER CPU: 0.000000 s
+    SYSTEM CPU: 0.000000 s
+
+CREATE AND FREE BLOCKS TEST
+Operation timing raport:
+    REAL: 0.070000 s
+    USER CPU: 0.050000 s
+    SYSTEM CPU: 0.010000 s
+
+----SHARED LIBRARY----
+SAVE TO MEMORY TEST - FEW SMALL FILES
+Operation timing raport:
+    REAL: 0.010000 s
+    USER CPU: 0.000000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - MANY SMALL FILES
+Operation timing raport:
+    REAL: 0.000000 s
+    USER CPU: 0.000000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - FEW MEDIUM FILES
+Operation timing raport:
+    REAL: 0.020000 s
+    USER CPU: 0.010000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - MANY MEDIUM FILES
+Operation timing raport:
+    REAL: 0.040000 s
+    USER CPU: 0.030000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - FEW BIG FILES
+Operation timing raport:
+    REAL: 0.100000 s
+    USER CPU: 0.090000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - MANY BIG FILES
+Operation timing raport:
+    REAL: 0.310000 s
+    USER CPU: 0.300000 s
+    SYSTEM CPU: 0.010000 s
+
+FREE BLOCKS TEST
+Operation timing raport:
+    REAL: 0.010000 s
+    USER CPU: 0.000000 s
+    SYSTEM CPU: 0.000000 s
+
+CREATE AND FREE BLOCKS TEST
+Operation timing raport:
+    REAL: 0.070000 s
+    USER CPU: 0.060000 s
+    SYSTEM CPU: 0.010000 s
+
+----DYNAMICALLY LINKED LIBRARY----
+SAVE TO MEMORY TEST - FEW SMALL FILES
+Operation timing raport:
+    REAL: 0.010000 s
+    USER CPU: 0.000000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - MANY SMALL FILES
+Operation timing raport:
+    REAL: 0.010000 s
+    USER CPU: 0.000000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - FEW MEDIUM FILES
+Operation timing raport:
+    REAL: 0.020000 s
+    USER CPU: 0.010000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - MANY MEDIUM FILES
+Operation timing raport:
+    REAL: 0.040000 s
+    USER CPU: 0.030000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - FEW BIG FILES
+Operation timing raport:
+    REAL: 0.110000 s
+    USER CPU: 0.100000 s
+    SYSTEM CPU: 0.000000 s
+
+SAVE TO MEMORY TEST - MANY BIG FILES
+Operation timing raport:
+    REAL: 0.350000 s
+    USER CPU: 0.310000 s
+    SYSTEM CPU: 0.020000 s
+
+FREE BLOCKS TEST
+Operation timing raport:
+    REAL: 0.010000 s
+    USER CPU: 0.000000 s
+    SYSTEM CPU: 0.000000 s
+
+CREATE AND FREE BLOCKS TEST
+Operation timing raport:
+    REAL: 0.080000 s
+    USER CPU: 0.060000 s
+    SYSTEM CPU: 0.010000 s
+

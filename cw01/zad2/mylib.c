@@ -106,7 +106,8 @@ int file_to_memory(struct Block *blocks, size_t blocks_length, temp_file_handle 
 
     FILE *file = fdopen(fd, "r");
     lseek (fd, 0, SEEK_SET); 
-    char *ptr, *name;
+    char *ptr;
+    char *name = calloc(128, sizeof(char));
 
     getline(&buffer, &buffer_size, file);
     blocks[index].length = strtol(buffer, &ptr, 10);
@@ -122,7 +123,8 @@ int file_to_memory(struct Block *blocks, size_t blocks_length, temp_file_handle 
         blocks[index].files[i].lines = strtol(strtok(buffer, " \t\n\v\f\r"), &ptr, 10);
         blocks[index].files[i].words = strtol(strtok(NULL, " \t\n\v\f\r"), &ptr, 10);
         blocks[index].files[i].chars = strtol(strtok(NULL, " \t\n\v\f\r"), &ptr, 10);
-        blocks[index].files[i].filename = calloc(strlen(name = strtok(NULL, " \t\n\v\f\r")) + 1, sizeof(char));
+        strcpy(strtok(NULL, " \t\n\v\f\r"), name);
+        blocks[index].files[i].filename = calloc(strlen(name) + 1, sizeof(char));
         if (blocks[index].files[i].filename == NULL) {
             fprintf(stderr, "Dynamic memory allocation failed: %s\n", strerror(errno));
             exit(1);
@@ -139,6 +141,7 @@ int file_to_memory(struct Block *blocks, size_t blocks_length, temp_file_handle 
     fclose(file);
     close(fd);
     free(buffer);
+    free(name);
 
     return index;
 }
@@ -164,11 +167,3 @@ void free_block_array(struct Block *blocks, size_t length) {
     free(blocks);
     blocks = NULL;
 }
-
-// int main(int argc, char *argv[]) {
-//     struct Block *blocks = create_array(1);
-//     temp_file_handle fd = count_to_file(argc-1, argv+1);
-//     file_to_memory(blocks, argc - 1, fd);
-//     free_block_array(blocks, 1);
-//     return 0;
-// }
