@@ -3,7 +3,7 @@ CFLAGS = -c -Wall
 MEANINGFUL_MESSAGE = systemy operacyjne to fajny przedmiot
 RAPORT = raport.txt
 
-all: test
+all: main
 
 # create executable
 mylib.o: mylib.c

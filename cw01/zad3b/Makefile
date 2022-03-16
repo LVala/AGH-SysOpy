@@ -2,11 +2,10 @@ CC = gcc
 CFLAGS = -c -Wall
 COPT = O0
 MEANINGFUL_MESSAGE = systemy operacyjne to fajny przedmiot
-RAPORT = results3b.txt
+RAPORT = raport.txt
 export LD_LIBRARY_PATH = $(shell pwd)
 
-all: test
-
+all: staticmain
 main.o: main.c
 	$(CC) $(CFLAGS) -$(COPT) -DRAPORT=\"$(RAPORT)\" main.c
 

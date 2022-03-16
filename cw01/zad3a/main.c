@@ -145,7 +145,7 @@ int run_commands(int arg_length, char *args[]) {
             exit(1);
         }
     }
-    free_block_array(NULL, blocks_length);
+    free_block_array(blocks, blocks_length);
 
 #ifdef DYNAMIC
     dlclose(handle);
