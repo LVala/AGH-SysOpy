@@ -1,0 +1,12 @@
+LIBRARY FUNCTIONS
+Operation timing raport:
+    REAL: 0.030000 s
+    USER CPU: 0.000000 s
+    SYSTEM CPU: 0.000000 s
+
+SYSTEM FUNCTIONS
+Operation timing raport:
+    REAL: 0.320000 s
+    USER CPU: 0.000000 s
+    SYSTEM CPU: 0.000000 s
+
