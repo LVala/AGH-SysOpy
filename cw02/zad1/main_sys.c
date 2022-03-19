@@ -8,7 +8,7 @@
 #include <sys/times.h>
 #include "timing.h"
 
-int copy_and_remove_blanks(int from_file, int to_file) {
+void copy_and_remove_blanks(int from_file, int to_file) {
     size_t buffer_size = 1024;  // buffer size must be >= longest line length
     char buffer[buffer_size];
 
@@ -39,15 +39,13 @@ int copy_and_remove_blanks(int from_file, int to_file) {
             ++i;
         }
     } while (copied_size);
-
-    return 0;
 }
 
 int main(int argc, char *argv[]) {
     char input_file_name[100] = {0};
     char output_file_name[100] = {0};
     if (argc == 2 || argc > 3) {
-        fprintf(stderr, "Invalid number of arguments: expected 2\n");
+        fprintf(stderr, "Error: Invalid number of arguments, expected 2\n");
         exit(1);
     }
     if (argc == 1) {
@@ -66,11 +64,11 @@ int main(int argc, char *argv[]) {
         to_file = open(output_file_name, O_WRONLY | O_CREAT, 0644);
     }
     if (!from_file) {
-        fprintf(stderr, "Input file could not be open or does not exist\n");
+        fprintf(stderr, "Error: Input file could not be opened or does not exist\n");
         exit(1);
     }
     if (!to_file) {
-        fprintf(stderr, "Output file could not be created or overwritten\n");
+        fprintf(stderr, "Error: Output file could not be created or overwritten\n");
         exit(1);
     }
 
