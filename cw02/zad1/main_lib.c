@@ -18,6 +18,9 @@ void copy_and_remove_blanks(FILE *from_file, FILE *to_file) {
         i = cur_start = 0;
         is_blank = 1;
         while (i < buffer_size && i < copied_size) {
+            if (!isspace(buffer[i])) {
+                is_blank = 0;
+            }
             if (i == buffer_size - 1) {
                 fseek(from_file, cur_start - i - 1, SEEK_CUR);
             }
@@ -31,9 +34,6 @@ void copy_and_remove_blanks(FILE *from_file, FILE *to_file) {
                 }
                 cur_start = i + 1;
                 is_blank = 1;
-            }
-            else if (!isspace(buffer[i])) {
-                is_blank = 0;
             }
             ++i;
         }

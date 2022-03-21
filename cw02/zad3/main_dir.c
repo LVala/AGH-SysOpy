@@ -79,7 +79,7 @@ void traverse_dir(char *dir_path, struct FilesCount *files_count) {
             snprintf(file_name, sizeof(file_name), "%s/%s", abs_dirpath, dir_obj->d_name);
         }
 
-        if (stat(file_name, &stat_obj) == -1) {
+        if (lstat(file_name, &stat_obj) == -1) {
             fprintf(stderr, "Additional file information could not be obtained: %s\n", strerror(errno));
             return;
         }

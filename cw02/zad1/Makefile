@@ -22,7 +22,6 @@ main_sys: main_sys.o timing.o
 	$(CC) -o main_sys main_sys.o timing.o
 
 
-
 # create test files
 test_1.txt:
 	rm -f test_1.txt
@@ -53,7 +52,6 @@ test:
 	make test_lib
 	make test_sys
 	make clean
-
 
 
 clean:
