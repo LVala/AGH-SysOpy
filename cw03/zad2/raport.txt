@@ -1,0 +1,30 @@
+Operation timing raport:
+    REAL: 0.040000 s
+    USER CPU: 0.000000 s
+    SYSTEM CPU: 0.000000 s
+
+Operation timing raport:
+    REAL: 0.040000 s
+    USER CPU: 0.010000 s
+    SYSTEM CPU: 0.000000 s
+
+Operation timing raport:
+    REAL: 0.650000 s
+    USER CPU: 0.140000 s
+    SYSTEM CPU: 0.020000 s
+
+Operation timing raport:
+    REAL: 0.510000 s
+    USER CPU: 0.160000 s
+    SYSTEM CPU: 0.010000 s
+
+Operation timing raport:
+    REAL: 16.180000 s
+    USER CPU: 4.840000 s
+    SYSTEM CPU: 0.320000 s
+
+Operation timing raport:
+    REAL: 14.750000 s
+    USER CPU: 4.950000 s
+    SYSTEM CPU: 0.430000 s
+
