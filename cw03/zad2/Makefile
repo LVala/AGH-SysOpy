@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall
-RAPORT = raport.txt
+RAPORT = raport_new.txt
 
 all: main
 
