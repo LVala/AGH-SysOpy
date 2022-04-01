@@ -1,0 +1,12 @@
+1) PRZY UZYWANIU fork()
+    a) ignore - parent i fork zakonczyly sie poprawnie, wiec sygnal zostal zignorowany (poniewaz fork jest kopia parenta z ustawionym ignorowaniem)
+    b) handler - parent i fork wypisaly komunikt o odebraniu sygnalu, co ma sens, 
+        poniewaz w obu procesach zainstalowany zostal handler (fork jest dokladna kopia procesu)
+    c) mask - sytuacja analogiczna jak dla ignore
+    d) pending - informacja o oczekujacym sygnale dla parenta, ale nie dla forka, co rowniez zgadza sie z przypuszczeniami,
+        poniewaz fork to nowy procesach
+
+2) PRZY UZYWANIU execl()
+    a) ignore - exec nadpisal kod parenta, wykonal go i zakonczyl sie poprawnie, wiec sygnaly zostaly zignorowane (poniewaz jest to ten sam proces)
+    b) mask - sytuacja analogiczna jak dla ignore
+    c) pending - sygnal oczekujacy istnieje zarowno dla parenta jak i dla exec (bo to ten sam proces)
