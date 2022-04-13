@@ -1,0 +1,7 @@
+składnik1 = cat /etc/passwd | wc -l
+składnik2 = ls | grep '^a'
+składnik3 = grep 11
+
+składnik1 | składnik3
+składnik1
+składnik2
