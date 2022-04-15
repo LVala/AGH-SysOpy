@@ -4,8 +4,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
-#define MAX_SIZE 10
+#define MAX_SIZE 10  // limit number of piped commands
 
 struct Component {
     char *name;
@@ -82,6 +83,8 @@ void parse_file(char *filepath, struct Component **comps, struct Executable **to
         (*comps)[i].cmds = calloc(MAX_SIZE, sizeof(char**));
         (*comps)[i].length = 0;
         strcpy((*comps)[i].name, token);
+        if (isspace((*comps)[i].name[strlen((*comps)[i].name)-1]))
+            (*comps)[i].name[strlen((*comps)[i].name)-1] = '\0';
 
         while((token = strtok_r(NULL, "|", &saveptr)) && (*comps)[i].length < MAX_SIZE) {
             char *temp = calloc(strlen(token)+1, sizeof(char));
@@ -146,8 +149,65 @@ void free_all(struct Component *comps, struct Executable *to_exec, int count[2])
         free(comps[i].name);
     }
     free(comps);
+
+    for (int i=0; i < count[1]; ++i) {
+        for (int j=0; j< to_exec[i].length; ++j) {
+            free( to_exec[i].cmds[j]);
+        }
+        free(to_exec[i].cmds);
+    }
+    free(to_exec);
 }
 
+void exec_commands(struct Component *comps, struct Executable to_exec, int comps_len) {
+    int fd[2][2];
+    pipe(fd[0]);
+    pipe(fd[1]);
+    int mode = 0;
+    int last_pid = 0;
+    for (int i=0; i<to_exec.length; ++i) {
+        int k = 0;
+        while (k < comps_len && strcmp(to_exec.cmds[i], comps[k].name))
+            ++k;
+
+        if (k == comps_len) {
+            fprintf(stderr, "Error: invalid command in file input\n");
+            exit(1);
+        }
+
+        for (int j=0; j<comps[k].length; ++j) {
+            pid_t pid = fork();
+            if (pid == -1) {
+                fprintf(stderr, "Failed to fork: %s\n", strerror(errno));
+                exit(1);
+            }
+            else if (pid > 0) {
+                if (i == to_exec.length-1 && j == comps[k].length-1)
+                    last_pid = pid;
+                mode = (mode+1)%2;
+            }
+            else if (pid == 0) {
+                if (j > 0 || i > 0)
+                    dup2(fd[mode][0], STDIN_FILENO);
+                if (i < to_exec.length-1 || j < comps[k].length-1) 
+                    dup2(fd[(mode+1)%2][1], STDOUT_FILENO);
+                close(fd[mode][1]);
+                close(fd[mode][0]);
+                close(fd[(mode+1)%2][0]);
+                close(fd[(mode+1)%2][1]);
+                execvp(comps[k].cmds[j][0], comps[k].cmds[j]);
+                exit(0);
+            }
+        }
+    }
+    
+    close(fd[0][0]);
+    close(fd[0][1]);
+    close(fd[1][0]);
+    close(fd[1][1]);
+    
+    waitpid(last_pid, NULL, 0);
+}
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -162,19 +222,8 @@ int main(int argc, char *argv[]) {
     parse_file(argv[1], &comps, &to_exec, count);
 
     for (int i=0; i<count[0]; ++i) {
-        for (int j=0; j < comps[i].length; ++j) {
-            for (int k=0; comps[i].cmds[j][k]; ++k) {
-                printf("%s\n", comps[i].cmds[j][k]);
-            }
-        }
+        exec_commands(comps, to_exec[i], count[0]);
     }
-
-    for (int i=0; i < count[1]; ++i) {
-        for (int j=0; j< to_exec[i].length; ++j) {
-            printf("%s\n", to_exec[i].cmds[j]);
-        }
-    }
-
 
     free_all(comps, to_exec, count);
     return 0;

@@ -1,7 +1,14 @@
 składnik1 = cat /etc/passwd | wc -l
-składnik2 = ls | grep '^a'
-składnik3 = grep 11
+składnik2 = ls | grep '^m'
+składnik3 = grep 14
+składnik4 = echo 'AAA'
+składnik5 = wc -l
+składnik6 = ls -l
+składnik7 = cat
 
 składnik1 | składnik3
+składnik4 | składnik3 | składnik7
 składnik1
-składnik2
+składnik2 | składnik6
+składnik4 | składnik5
+składnik4
