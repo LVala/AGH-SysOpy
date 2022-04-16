@@ -1,0 +1,2 @@
+POCZATEK plik tekstowy
+plik 123 124 dlugieslowo KONIEC
