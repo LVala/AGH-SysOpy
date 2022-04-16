@@ -69,6 +69,10 @@ void parse_file(char *filepath, struct Component **comps, struct Executable **to
     fseek(fp, 0, SEEK_SET);
 
     *comps = calloc(count[0], sizeof(struct Component));
+    if (*comps == 0) {
+        fprintf(stderr, "Memory allocation failed: %s\n", strerror(errno));
+        exit(1);
+    }
 
     char *line = NULL;
     size_t len = 0;
@@ -81,6 +85,10 @@ void parse_file(char *filepath, struct Component **comps, struct Executable **to
 
         (*comps)[i].name = calloc(strlen(token)+1, sizeof(char));
         (*comps)[i].cmds = calloc(MAX_SIZE, sizeof(char**));
+        if ((*comps)[i].name == 0 || (*comps)[i].cmds == 0) {
+        fprintf(stderr, "Memory allocation failed: %s\n", strerror(errno));
+        exit(1);
+        }
         (*comps)[i].length = 0;
         strcpy((*comps)[i].name, token);
         if (isspace((*comps)[i].name[strlen((*comps)[i].name)-1]))
@@ -91,6 +99,7 @@ void parse_file(char *filepath, struct Component **comps, struct Executable **to
             strcpy(temp, token);
             int words = count_words(temp);
             (*comps)[i].cmds[(*comps)[i].length] = calloc(words+1, sizeof(char*));
+            
             (*comps)[i].cmds[(*comps)[i].length][words] = NULL;
 
             char *saveptr2 = NULL;
@@ -99,6 +108,10 @@ void parse_file(char *filepath, struct Component **comps, struct Executable **to
             while (subtoken) {
                 int word_len = strlen(subtoken);
                 (*comps)[i].cmds[(*comps)[i].length][j] = calloc(word_len+1, sizeof(char));
+                if ((*comps)[i].cmds[(*comps)[i].length][j] == 0) {
+                    fprintf(stderr, "Memory allocation failed: %s\n", strerror(errno));
+                    exit(1);
+                }
                 strcpy((*comps)[i].cmds[(*comps)[i].length][j], subtoken);
 
                 if ((*comps)[i].cmds[(*comps)[i].length][j][word_len-1] == '\n')
@@ -114,15 +127,27 @@ void parse_file(char *filepath, struct Component **comps, struct Executable **to
     }
 
     *to_exec = calloc(count[1], sizeof(struct Component));
+    if (*to_exec == 0) {
+        fprintf(stderr, "Memory allocation failed: %s\n", strerror(errno));
+        exit(1);
+    }
     i = 0;
     while (getline(&line, &len, fp) != -1) {
         (*to_exec)[i].cmds = calloc(MAX_SIZE, sizeof(char*));
+        if ((*to_exec)[i].cmds == 0) {
+            fprintf(stderr, "Memory allocation failed: %s\n", strerror(errno));
+            exit(1);
+        }
         (*to_exec)[i].length = 0;
         char *saveptr = NULL;
         char *token = strtok_r(line, " | ", &saveptr);
         while (token && (*to_exec)[i].length < MAX_SIZE) {
             int word_len = strlen(token);
             (*to_exec)[i].cmds[(*to_exec)[i].length] = calloc(strlen(token)+1, sizeof(char));
+            if ((*to_exec)[i].cmds[(*to_exec)[i].length] == 0) {
+                fprintf(stderr, "Memory allocation failed: %s\n", strerror(errno));
+                exit(1);
+            }
             strcpy((*to_exec)[i].cmds[(*to_exec)[i].length], token);
 
             if ((*to_exec)[i].cmds[(*to_exec)[i].length][word_len-1] == '\n')
@@ -161,8 +186,14 @@ void free_all(struct Component *comps, struct Executable *to_exec, int count[2])
 
 void exec_commands(struct Component *comps, struct Executable to_exec, int comps_len) {
     int fd[2][2];
-    pipe(fd[0]);
-    pipe(fd[1]);
+    if (pipe(fd[0]) == -1) {
+        fprintf(stderr, "Pipe could not be created: %s\n", strerror(errno));
+        exit(1);
+    }
+    if (pipe(fd[1]) == -1) {
+        fprintf(stderr, "Pipe could not be created: %s\n", strerror(errno));
+        exit(1);
+    }
     int mode = 0;
     int last_pid = 0;
     for (int i=0; i<to_exec.length; ++i) {
@@ -196,7 +227,8 @@ void exec_commands(struct Component *comps, struct Executable to_exec, int comps
                 close(fd[(mode+1)%2][0]);
                 close(fd[(mode+1)%2][1]);
                 execvp(comps[k].cmds[j][0], comps[k].cmds[j]);
-                exit(0);
+                fprintf(stderr, "Exec failed: %s\n", strerror(errno));
+                exit(1);
             }
         }
     }
