@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sys/file.h>
 
 void add_line(FILE *filep, FILE *newfilep, char *to_add, int row_num, int chars_num) {
     char *buffer = calloc(chars_num, sizeof(char));
@@ -58,7 +59,7 @@ void read_from_fifo(char *fifo_path, char *file_path, int chars_num) {
         fprintf(stderr, "Fifo could not be opened: %s\n", strerror(errno));
         exit(1);
     }
-    FILE *filep = fopen(file_path, "r");
+    FILE *filep = fopen(file_path, "a+");
     if (filep == NULL) {
         fprintf(stderr, "File could not be opened: %s\n", strerror(errno));
         exit(1);
@@ -84,6 +85,7 @@ void read_from_fifo(char *fifo_path, char *file_path, int chars_num) {
             }
             unlink(file_path);
             FILE *newfilep = fopen(file_path, "w+");
+            flock(fileno(newfilep), LOCK_EX);
 
             if ((len = fread(buffer, sizeof(char), chars_num, fifop)) == 0) {
                 fprintf(stderr, "Reading content from fifo failed\n");
@@ -93,6 +95,8 @@ void read_from_fifo(char *fifo_path, char *file_path, int chars_num) {
             add_line(filep, newfilep, buffer, row_num, chars_num);
             fclose(filep);
             filep = newfilep;
+            flock(fileno(newfilep), LOCK_UN);
+
         }
         else {
             row_num_arr[i++] = c;

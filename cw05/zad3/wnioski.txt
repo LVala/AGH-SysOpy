@@ -1,0 +1,6 @@
+Przy uzywaniu wielu producentow oraz jednego konsumenta dane sa poprawnie zczytywane oraz zapisywane do pliku dla niewielkich N, dla N > PIPE_BUF
+dane nie sa poprawnie zczytywane, najwyzej, ze zostanie zapewniona atomicznosc zapisywania do fifo poprzez uzycie flock
+
+Dla przypadkow z wieloma konsumentami pliki wyjsciowe zawieraja niepoprawne dane, co jednak niekoniecznie spowodowane jest bledami czytania z fifo, ale
+faktem, ze dopisywanie do pliku wynikowego polega w rzeczywistosci na jego podmianie, 
+wiec nawet uzywanie flock moze nie pomoc w tej sytuacji (gdy plik jest blokowany, oznacza to, ze zostanie podmieniony, wiec po odblokowaniu czytany jest stary plik)

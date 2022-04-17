@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <ctype.h>
+#include <sys/file.h>
 
 int isnumber(const char *ptr) {
     if (ptr == NULL)
@@ -58,11 +59,13 @@ void read_to_fifo(char *fifo_path, char *row_num, char *file_path, int chars_num
             exit(1);
         }
         // gets rid of newline characters in order to store it in one line
+        flock(fileno(fifop), LOCK_EX);
         remove_newlines(buffer);
         if (fwrite(buffer, sizeof(char), chars_num + strlen(row_num) + 1, fifop) <= 0) {
             fprintf(stderr, "Writing to fifo failed: %s\n", strerror(errno));
             exit(1);
         }
+        flock(fileno(fifop), LOCK_UN);
         fflush(fifop);
     }
 
