@@ -11,6 +11,14 @@
 #define TOONE 4
 #define INIT  5
 
+#define ERROR(code, if_errno, format, ...) {                     \
+    fprintf(stderr, format, ##__VA_ARGS__);                      \
+    if (if_errno)                                                \
+        fprintf(stderr, "Error message: %s\n", strerror(errno)); \
+    if (code != 0)                                               \
+        exit(code);                                              \
+}                                                                \
+
 struct Message {
     long type;
     int sender_id;
@@ -18,5 +26,7 @@ struct Message {
     time_t send_time;
     char content[MSG_SIZE];
 };
+
+#define SEND_SIZE sizeof(struct Message) - sizeof(long int)
 
 #endif
