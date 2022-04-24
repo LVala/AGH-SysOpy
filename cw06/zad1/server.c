@@ -13,17 +13,16 @@
 int sq_desc;
 int clients[QARRAY_SIZE];
 
-int create_server_queue(key_t *key) {
-    if ((*key = ftok(SERVER_PATH, PROJ_ID)) == -1) {
+void create_server_queue(void) {
+    key_t key = ftok(SERVER_PATH, PROJ_ID);
+    if (key == -1) {
         ERROR(1, 1, "Error: key cannot be generated\n");
     }
 
-    int sq_desc = msgget(*key, IPC_CREAT | 0666);
+    sq_desc = msgget(key, IPC_CREAT | 0666);
     if (sq_desc == -1) {
         ERROR(1, 1, "Error: server queue cannot be open\n");
     }
-
-    return sq_desc;
 }
 
 int find_free() {
@@ -148,8 +147,7 @@ int main(void) {
     FILE *log_file = fopen("./server_log.txt", "a");
     char time_buff[20];
 
-    key_t sq_key;
-    sq_desc = create_server_queue(&sq_key);
+    create_server_queue();
 
     for (int i=0; i<QARRAY_SIZE; ++i) clients[i] = 0;
 
@@ -159,7 +157,8 @@ int main(void) {
             ERROR(1, 1, "Error: message form server queue could not be receieved\n");
         }
         if (&message != NULL) {
-            strftime(time_buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&message.send_time));
+            time_t now_time = time(NULL);
+            strftime(time_buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now_time));
             fprintf(log_file, "TIME: %s | SENDER_ID: %d | TYPE: %d | CONTENT: %s\n", \
                 time_buff, message.sender_id, message.type, message.content);
             fflush(log_file);
