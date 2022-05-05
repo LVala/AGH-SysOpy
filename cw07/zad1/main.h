@@ -4,8 +4,9 @@
 #define PIZZA_TYPES 9
 #define OVEN_SIZE 5
 #define TABLE_SIZE 5
-#define COOK_NUMBER 5
-#define DELIVERER_NUMBER 5
+
+#define OVEN_SEM 0
+#define TABLE_SEM 1
 
 #define PROJ_ID 1234
 #define OVEN_SEM_PATH "/tmp"
