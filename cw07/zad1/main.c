@@ -10,7 +10,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/types.h>
-#include "main.h"
+#include "utils.h"
 
 int mem_id;
 int sem_id;
@@ -51,13 +51,13 @@ int main(int argc, char *argv[]) {
         ERROR(1, 1, "Error: SIGINT handler could not be set\n");
     }
     if (sigaction(SIGHUP, &act, NULL) == -1) {
-        ERROR(1, 1, "Error: SIGINT handler could not be set\n");
+        ERROR(1, 1, "Error: SIGHUP handler could not be set\n");
     }
     if (sigaction(SIGQUIT, &act, NULL) == -1) {
-        ERROR(1, 1, "Error: SIGINT handler could not be set\n");
+        ERROR(1, 1, "Error: SIGQUIT handler could not be set\n");
     }
     if (sigaction(SIGTERM, &act, NULL) == -1) {
-        ERROR(1, 1, "Error: SIGINT handler could not be set\n");
+        ERROR(1, 1, "Error: SIGTERM handler could not be set\n");
     }
 
     // handle command line arguments
@@ -73,38 +73,58 @@ int main(int argc, char *argv[]) {
     }
 
     // semaphores
-    union semun {
-        int val;
-        struct semid_ds *buf;
-        unsigned short *array;
-    } arg;
-    arg.val = 0;
-
-    key_t sem_key = ftok(OVEN_SEM_PATH, PROJ_ID);
-    if (sem_key == -1) {
+    key_t key = ftok(PATH, PROJ_ID);
+    if (key == -1) {
         ERROR(1, 1, "Error: semaphore key could not be generated\n");
     }
-    if ((mem_id = semget(sem_key, 1, IPC_CREAT | IPC_EXCL | 0666)) == -1) {
+    if ((sem_id = semget(key, 5, IPC_CREAT | 0666)) == -1) {
         ERROR(1, 1, "Error: semaphores could not be created\n");
     }
-    if (semctl(mem_id, OVEN_SEM, SETVAL, arg) == -1) {
-        ERROR(1, 1, "Error: oven semaphore could not be reset to 0\n");
+
+    union semun arg;
+    arg.val = 1;
+
+    if (semctl(sem_id, OVEN_USED, SETVAL, arg) == -1) {
+        ERROR(1, 1, "Error: OVEN_USED semaphore could not be reset to 0\n");
     }
-    if (semctl(mem_id, TABLE_SEM, SETVAL, arg) == -1) {
-        ERROR(1, 1, "Error: table semaphore could not be reset to 0\n");
+    if (semctl(sem_id, TABLE_USED, SETVAL, arg) == -1) {
+        ERROR(1, 1, "Error: TABLE_USED semaphore could not be reset to 0\n");
+    }
+    arg.val = 0;
+    if (semctl(sem_id, TABLE_READY, SETVAL, arg) == -1) {
+        ERROR(1, 1, "Error: OVEN_SPACE semaphore could not be reset to 0\n");
+    }
+    arg.val = OVEN_SIZE;
+    if (semctl(sem_id, OVEN_SPACE, SETVAL, arg) == -1) {
+        ERROR(1, 1, "Error: OVEN_SPACE semaphore could not be reset to 0\n");
+    }
+    arg.val = TABLE_SIZE;
+    if (semctl(sem_id, TABLE_SPACE, SETVAL, arg) == -1) {
+        ERROR(1, 1, "Error: TABLE_SPACE semaphore could not be reset to 0\n");
     }
 
     // shared memory
-    key_t mem_key = ftok(MEM_PATH, PROJ_ID);
-    if (mem_key == -1) {
-        ERROR(1, 1, "Error: oven semaphore key could not be generated\n");
-    }
-    if ((mem_id = shmget(mem_key, (OVEN_SIZE + TABLE_SIZE)*sizeof(int), IPC_CREAT | IPC_EXCL | 0666)) == -1) {
+    if ((mem_id = shmget(key, sizeof(struct Oven_table), IPC_CREAT | 0666)) == -1) {
         ERROR(1, 1, "Error: shared memory segment could not be created\n");
+    }
+    struct Oven_table *oven_table;
+    if ((oven_table = shmat(mem_id, NULL, 0)) == (void*) -1) {
+        ERROR(1, 1, "Error: shared memory could not be attached\n");
+    }
+
+    for (int i=0; i<OVEN_SIZE; ++i)
+        oven_table->oven[i] = -1;
+    for (int i=0; i<TABLE_SIZE; ++i)
+        oven_table->table[i] = -1;
+    oven_table->oven_quan = 0;
+    oven_table->table_quan = 0;
+
+    if (shmdt(oven_table) == -1) { 
+        ERROR(0, 1, "Error: shared memory could not be detached\n");
     }
 
     // create cook processes
-    if ((cooks = calloc(cook_number, sizeof(pid_t)))) {
+    if ((cooks = calloc(cook_number, sizeof(pid_t))) == NULL) {
         ERROR(1, 1, "Error: failed to allocate memory\n");
     }
     for (int i=0; i<cook_number; ++i) {
@@ -118,7 +138,7 @@ int main(int argc, char *argv[]) {
     }
     
     // create deliverer processes
-    if ((deliverers = calloc(deliverer_number, sizeof(pid_t)))) {
+    if ((deliverers = calloc(deliverer_number, sizeof(pid_t))) == NULL) {
         ERROR(1, 1, "Error: failed to allocate memory\n");
     }
     for (int i=0; i<deliverer_number; ++i) {
