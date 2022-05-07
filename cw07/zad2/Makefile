@@ -7,7 +7,7 @@ DEPS = utils.h
 all: main cook deliverer
 
 %: %.c $(DEPS)
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -lpthread -lrt -o $@ $<
 
 clean:
 	rm -f main cook deliverer

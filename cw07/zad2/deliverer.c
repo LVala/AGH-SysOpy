@@ -5,23 +5,27 @@
 #include <signal.h>
 #include <unistd.h>
 #include <time.h>
-#include <sys/sem.h>
-#include <sys/ipc.h>
-#include <sys/types.h>
-#include <sys/shm.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 #include "utils.h"
 
 struct Oven_table *oven_table;
-int sem_id;
+sem_t *table_used_sem_id;
+sem_t *table_space_sem_id;
+sem_t *table_ready_sem_id;
 
 void handle_signals(int signo) {
     exit(0);
 }
 
 void handle_exit(void) {
-    if (shmdt(oven_table) == -1) { 
-        ERROR(0, 1, "Error: shared memory could not be detached\n");
-    }
+    sem_close(table_used_sem_id);
+    sem_close(table_space_sem_id);
+    sem_close(table_ready_sem_id);
+
+    munmap(oven_table, sizeof(struct Oven_table));
 }
 
 int find_taken(void) {
@@ -33,19 +37,7 @@ int find_taken(void) {
 }
 
 void deliver_pizza(void) {
-    struct sembuf sb_table_used;
-    sb_table_used.sem_num = TABLE_USED;
-    sb_table_used.sem_flg = 0;
-    struct sembuf sb_table_space;
-    sb_table_space.sem_num = TABLE_SPACE;
-    sb_table_space.sem_flg = 0;
-    struct sembuf sb_table_ready;
-    sb_table_ready.sem_num = TABLE_READY;
-    sb_table_ready.sem_flg = 0;
-
-    sb_table_used.sem_op = -1;
-    sb_table_ready.sem_op = -1;
-    if (semop(sem_id, (struct sembuf[]){sb_table_used, sb_table_ready}, 2) == -1) {
+    if ((sem_wait(table_ready_sem_id) == -1) | (sem_wait(table_used_sem_id) == -1)) {
         ERROR(1, 1, "Error: unable to perform operation on semaphore\n");
     }
     int pizza_spot = find_taken();
@@ -54,9 +46,7 @@ void deliver_pizza(void) {
     --oven_table->table_quan;
     print_com(getpid(), "Pobieram pizze: %d. Liczba pizz na stole: %d.\n", pizza_type, oven_table->table_quan);
 
-    sb_table_used.sem_op = 1;
-    sb_table_space.sem_op = 1;
-    if (semop(sem_id, (struct sembuf[]){sb_table_used, sb_table_space}, 2) == -1) {
+    if ((sem_post(table_space_sem_id) == -1) | (sem_post(table_used_sem_id) == -1)) {
         ERROR(1, 1, "Error: unable to perform operation on semaphore\n");
     }
 
@@ -81,22 +71,24 @@ int main(void) {
     srand(getpid() * time(NULL));
 
     // semaphores
-    key_t key = ftok(PATH, PROJ_ID);
-    if (key == -1) {
-        ERROR(1, 1, "Error: semaphore key could not be generated\n");
+    if ((table_used_sem_id = sem_open(TABLE_USED, 0)) == SEM_FAILED) {
+        ERROR(1, 1, "Error: TABLE_USED semaphore could not opened\n");
     }
-    if ((sem_id = semget(key, 0, 0)) == -1) {
-        ERROR(1, 1, "Error: semaphores could not be created\n");
+    if ((table_space_sem_id = sem_open(TABLE_SPACE, 0)) == SEM_FAILED) {
+        ERROR(1, 1, "Error: TABLE_SPACE semaphore could not opened\n");
+    }
+    if ((table_ready_sem_id = sem_open(TABLE_READY, 0)) == SEM_FAILED) {
+        ERROR(1, 1, "Error: TABLE_READY semaphore could not opened\n");
     }
 
     // shared memory
     int mem_id;
-    if ((mem_id = shmget(key, 0, 0)) == -1) {
-        ERROR(1, 1, "Error: shared memory segment could not be created\n");
+    if ((mem_id = shm_open(MEM, O_RDWR, 0)) == -1) {
+        ERROR(1, 1, "Error: shared memory segment could not be opened\n");
     }
 
-    if ((oven_table = shmat(mem_id, NULL, 0)) == (void*) -1) {
-        ERROR(1, 1, "Error: shared memory could not be attached\n");
+    if ((oven_table = mmap(NULL, sizeof(struct Oven_table), PROT_READ | PROT_WRITE, MAP_SHARED, mem_id, 0)) == (void*) -1) {
+        ERROR(1, 1, "Error: deli shared memory could not be attached\n");
     }
 
     while (1) {

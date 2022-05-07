@@ -1,0 +1,3 @@
+Semafory umożliwiają zapewnienie wyłączności w modyfikacji pamięci dzielonej procesowi, bez ich wykorzystania używanie dzielonej pamięci byłoby kłopotliwe (wiele procesów mogłoby ją jednocześnie modyfikować, co skutkuje błędami).
+Semafory umożliwyły również blokowanie procesów wtedy, gdy niezablokowanie skutkowałoby złamaniem założeń, np. przekroczeniem limitu pizz w piecu.
+Niezależnie od kombinacji N i M (mniejsze od 5, większe od 5, mieszane) liczba pizz w piecu ani na stole nie przekroczyła limitu.

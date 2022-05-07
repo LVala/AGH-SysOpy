@@ -5,14 +5,17 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/wait.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
-#include <sys/shm.h>
-#include <sys/types.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 #include "utils.h"
 
-int mem_id;
-int sem_id;
+sem_t *oven_used_sem_id;
+sem_t *oven_space_sem_id;
+sem_t *table_used_sem_id;
+sem_t *table_space_sem_id;
+sem_t *table_ready_sem_id;
 
 int cook_number;
 pid_t *cooks;
@@ -31,12 +34,19 @@ void handle_exit(void) {
         kill(deliverers[i], SIGINT);
     }
 
-    if (semctl(sem_id, 0, IPC_RMID) == -1) { 
-        ERROR(0, 1, "Error: semaphores could not be removed\n");
-    }
-    if (shmctl(mem_id, IPC_RMID, NULL) == -1) {
-        ERROR(0, 1, "Error: shared memory segment could not be removed\n");
-    }
+    sem_close(oven_used_sem_id);
+    sem_close(oven_space_sem_id);
+    sem_close(table_used_sem_id);
+    sem_close(table_space_sem_id);
+    sem_close(table_ready_sem_id);
+
+    sem_unlink(OVEN_USED);
+    sem_unlink(OVEN_SPACE);
+    sem_unlink(TABLE_USED);
+    sem_unlink(TABLE_SPACE);
+    sem_unlink(TABLE_READY);
+
+    shm_unlink(MEM);
 }
 
 int main(int argc, char *argv[]) {
@@ -72,43 +82,34 @@ int main(int argc, char *argv[]) {
     }
 
     // semaphores
-    key_t key = ftok(PATH, PROJ_ID);
-    if (key == -1) {
-        ERROR(1, 1, "Error: semaphore key could not be generated\n");
+    if ((oven_used_sem_id = sem_open(OVEN_USED, O_CREAT, 0666, 1)) == SEM_FAILED) {
+        ERROR(1, 1, "Error: OVEN_USED semaphore could not created\n");
     }
-    if ((sem_id = semget(key, 5, IPC_CREAT | 0666)) == -1) {
-        ERROR(1, 1, "Error: semaphores could not be created\n");
+    if ((oven_space_sem_id = sem_open(OVEN_SPACE, O_CREAT, 0666, OVEN_SIZE)) == SEM_FAILED) {
+        ERROR(1, 1, "Error: OVEN_SPACE semaphore could not created\n");
     }
-
-    union semun arg;
-    arg.val = 1;
-
-    if (semctl(sem_id, OVEN_USED, SETVAL, arg) == -1) {
-        ERROR(1, 1, "Error: OVEN_USED semaphore could not be reset to 0\n");
+    if ((table_used_sem_id = sem_open(TABLE_USED, O_CREAT, 0666, 1)) == SEM_FAILED) {
+        ERROR(1, 1, "Error: TABLE_USED semaphore could not created\n");
     }
-    if (semctl(sem_id, TABLE_USED, SETVAL, arg) == -1) {
-        ERROR(1, 1, "Error: TABLE_USED semaphore could not be reset to 0\n");
+    if ((table_space_sem_id = sem_open(TABLE_SPACE, O_CREAT, 0666, TABLE_SIZE)) == SEM_FAILED) {
+        ERROR(1, 1, "Error: TABLE_SPACE semaphore could not created\n");
     }
-    arg.val = 0;
-    if (semctl(sem_id, TABLE_READY, SETVAL, arg) == -1) {
-        ERROR(1, 1, "Error: OVEN_SPACE semaphore could not be reset to 0\n");
-    }
-    arg.val = OVEN_SIZE;
-    if (semctl(sem_id, OVEN_SPACE, SETVAL, arg) == -1) {
-        ERROR(1, 1, "Error: OVEN_SPACE semaphore could not be reset to 0\n");
-    }
-    arg.val = TABLE_SIZE;
-    if (semctl(sem_id, TABLE_SPACE, SETVAL, arg) == -1) {
-        ERROR(1, 1, "Error: TABLE_SPACE semaphore could not be reset to 0\n");
+    if ((table_ready_sem_id = sem_open(TABLE_READY, O_CREAT, 0666, 0)) == SEM_FAILED) {
+        ERROR(1, 1, "Error: TABLE_READY semaphore could not created\n");
     }
 
     // shared memory
-    if ((mem_id = shmget(key, sizeof(struct Oven_table), IPC_CREAT | 0666)) == -1) {
+    int mem_id;
+    if ((mem_id = shm_open(MEM, O_RDWR | O_CREAT, 0666)) == -1) {
         ERROR(1, 1, "Error: shared memory segment could not be created\n");
     }
+    if (ftruncate(mem_id, sizeof(struct Oven_table)) == -1) {
+        ERROR(1, 1, "Error: size of shared memory segment could not be set\n");
+    }
+
     struct Oven_table *oven_table;
-    if ((oven_table = shmat(mem_id, NULL, 0)) == (void*) -1) {
-        ERROR(1, 1, "Error: shared memory could not be attached\n");
+    if ((oven_table = mmap(NULL, sizeof(struct Oven_table), PROT_READ | PROT_WRITE, MAP_SHARED, mem_id, 0)) == (void*) -1) {
+        ERROR(1, 1, "Error: main shared memory could not be attached\n");
     }
 
     for (int i=0; i<OVEN_SIZE; ++i)
@@ -118,7 +119,7 @@ int main(int argc, char *argv[]) {
     oven_table->oven_quan = 0;
     oven_table->table_quan = 0;
 
-    if (shmdt(oven_table) == -1) { 
+    if (munmap(oven_table, sizeof(struct Oven_table)) == -1) { 
         ERROR(1, 1, "Error: shared memory could not be detached\n");
     }
 
