@@ -79,6 +79,8 @@ int main(void) {
         ERROR(1, 1, "Error: SIGHUP handler could not be set\n");
     }
 
+    srand(getpid() * time(NULL));
+
     // semaphores
     key_t key = ftok(PATH, PROJ_ID);
     if (key == -1) {

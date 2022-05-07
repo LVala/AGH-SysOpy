@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     if ((cook_number = strtol(argv[1], NULL, 10)) <= 0) {
         ERROR(1, 1, "Error: invalid first argument\n");
     }
-    if ((deliverer_number = strtol(argv[1], NULL, 10)) <= 0) {
+    if ((deliverer_number = strtol(argv[2], NULL, 10)) <= 0) {
         ERROR(1, 1, "Error: invalid second argument\n");
     }
 
