@@ -1,0 +1,10 @@
+Uzycie wariantu pierwszego wiaze sie z iterowaniem przez wszystkie wartosci, wiec metoda
+nie jest najbardziej optymalna, uzycie wielu watkow w tym przypadku nie poprawia wydajnosci.
+Wariant drugi natomiast rzeczywiscie rozdziela zadanie w taki sposob, ze kazdy watek wykonuje
+tylko czesc pracy, widac zauwazalna poprawe.
+
+Zwiekszanie liczby watkow dla wariantu pierwszego nie daje poprawy, a wrecz wydluza czas dzialania
+z powodow opisanych powyzej.W wariancie drugim wieksza liczba watkow skutkuje lepszym czasem.
+
+Dla obu wariantow suma czasow dzialania poszczegolnych watkow jest wieksza niz calkowity czas dzialania
+programu, co jest zrozumiale, bo obliczenia przeprowadzane sa w pewnym stopniu rownolegle.
