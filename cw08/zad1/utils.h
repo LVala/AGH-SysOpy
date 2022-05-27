@@ -33,6 +33,6 @@ struct Times {
 #define START 0
 #define STOP 1
 
-#define MAX_LINE 70
+#define MAX_LINE 100
 
 #endif

@@ -42,34 +42,30 @@ struct Image read_image(char *in_file) {
                 if (strcmp(token, "P2")) {
                 ERROR(0, 0, "Warning: file does not begin with P2, ASCII PGM magic number, continuing reading...\n");
                 }
-                ++word_num;
             }
             else if (word_num == 1) {
                 if ((image.width = strtol(token, NULL, 10)) == 0) {
                     ERROR(1, 1, "Error: invalid width in input file\n");
                 }
-                ++word_num;
             }
             else if (word_num == 2) {
                 if ((image.height = strtol(token, NULL, 10)) == 0) {
                     ERROR(1, 1, "Error: invalid height in input file\n");
                 }
-                ++word_num;
                 image.values = malloc(image.width*image.height*sizeof(int));
             }
             else if (word_num == 3) {
                 if ((image.max_pixel = strtol(token, NULL, 10)) == 0) {
                     ERROR(1, 1, "Error: invalid maximum pixel value in input file\n");
                 }
-                ++word_num;
             }
             else {
-                image.values[word_num-4] = strtol(token, NULL, 10);
                 if (word_num-4 >= image.width*image.height) {
                     ERROR(1, 0, "Error: number of values exceeds width*height\n");
                 }
-                ++word_num;
+                image.values[word_num-4] = strtol(token, NULL, 10);
             }
+            ++word_num;
             token = strtok_r(NULL, " \t\n", &saveptr);
         }
     }
