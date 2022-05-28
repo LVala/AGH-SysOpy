@@ -7,16 +7,6 @@
 #define ELVES_REQUIRED 3
 #define SANTA_DELIVERIES 3
 
-struct Context {
-    pthread_mutex_t mutex;
-    pthread_cond_t cond_elves;
-    pthread_cond_t cond_reindeer;
-    pthread_cond_t cond_santa;
-    int elves;
-    int elves_id[ELVES_REQUIRED];
-    int reindeers;
-};
-
 #define ERROR(code, if_errno, format, ...) {                     \
     fprintf(stderr, format, ##__VA_ARGS__);                      \
     if (if_errno)                                                \
