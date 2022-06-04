@@ -96,9 +96,9 @@ void handle_finish(struct message *msg) {
 }
 
 void handle_start(struct message *msg) {
-    symbol = msg->data.symbol;
-    print_board("Oponent has beed found! Your symbol: %c\n");
-    // TODO
+    symbol = msg->data.cred.symbol;
+    printf("Match against %s is starting! Your symbol: %c\nWait for your turn...\n", msg->data.cred.name, symbol);
+    print_board(msg->data.board);
 }
 
 int main(int argc, char *argv[]) {
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
 
     struct message msg;
     msg.type = CONNECT;
-    strcpy(msg.data.name, name);
+    strcpy(msg.data.cred.name, name);
     write(sockfd, &msg, sizeof(msg));
 
     while(1) {

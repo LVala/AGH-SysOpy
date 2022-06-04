@@ -34,9 +34,11 @@ struct message {
     } type;
     int id;
     union data {
-        char name[MAX_CNAME_LEN];
+        struct cred {
+            char name[MAX_CNAME_LEN];
+            char symbol;
+        } cred;
         char board[BOARD_SIZE];
-        char symbol;
         int move;
         char winner;
     } data;
