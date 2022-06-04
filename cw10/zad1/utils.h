@@ -10,11 +10,13 @@
         exit(code);                                              \
 }
 
-#define MAX_PLAYERS 15
+#define MAX_PLAYERS 12
 #define MAX_CNAME_LEN 50
 #define MAX_EVENTS 5
 #define BOARD_SIZE 9
 #define SEPARATOR "---+---+---\n"
+#define SYMBOL_1 'X'
+#define SYMBOL_2 'O'
 
 enum socket_type {
     LOCAL,
@@ -29,6 +31,7 @@ struct message {
         MOVE,
         BOARD,
         NAME_TAKEN,
+        TOO_MANY, // TODO
         FINISH,
         START,
     } type;
@@ -47,6 +50,10 @@ struct message {
 struct client {
     char name[MAX_CNAME_LEN];
     int taken;
+    int opponent;
+    int sockfd;
+    char *board;
+    pthread_mutex_t mutex;
 };
 
 
