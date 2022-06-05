@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <signal.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -58,13 +60,17 @@ void handle_connect(struct message *msg) {
     printf("Succesfully connected to the server, waiting for a match...\n");
 }
 
-void handle_disconnect() {
+void handle_exit() {
     struct message msg;
     msg.id = id;
     msg.type = DISCONNECT;
     write(sockfd, &msg, sizeof(struct message));
     shutdown(sockfd, SHUT_RDWR);
     close(sockfd);
+}
+
+void handle_disconnect_signal(int signo) {
+    exit(0);
 }
 
 void handle_ping() {
@@ -76,29 +82,35 @@ void handle_ping() {
 
 void handle_board(struct message *msg) {
     struct message new_msg;
+    new_msg.type = MOVE;
     new_msg.id = id;
 
     print_board(msg->data.board);
-    printff("Enter your move (1-9): ");
-    scanf("%d", new_msg.data.move);
-    write(sockfd, new_msg, sizeof(struct message));
+    printf("Enter your move (1-9): ");
+    scanf("%d", &new_msg.data.move);
+    while (new_msg.data.move < 1 || new_msg.data.move > BOARD_SIZE || msg->data.board[new_msg.data.move-1] != ' ') {
+        printf("Invalid move, enter valid move (1-9): ");
+        scanf("%d", &new_msg.data.move);
+    }
+    printf("Wait for your turn...\n");
+    write(sockfd, &new_msg, sizeof(struct message));
 }
 
 void handle_finish(struct message *msg) {
     printf("Game finished: ");
-    if (msg->data.winner == '\0') {
-        printf("DRAW!\n");
+    if (msg->data.winner == 'd') {
+        printf("Draw!\n");
     } else if (msg->data.winner == symbol) {
-        printf("YOU WON!\n");
+        printf("You won!\n");
     } else {
-        printf("YOU LOST!\n");
+        printf("You lost!\n");
     }
+    exit(0);
 }
 
 void handle_start(struct message *msg) {
     symbol = msg->data.cred.symbol;
     printf("Match against %s is starting! Your symbol: %c\nWait for your turn...\n", msg->data.cred.name, symbol);
-    print_board(msg->data.board);
 }
 
 int main(int argc, char *argv[]) {
@@ -106,21 +118,23 @@ int main(int argc, char *argv[]) {
         ERROR(1, 0, "Error: invalid number of arguments, expected 3\n");
     }
 
-    // TODO exit handling
+    atexit(handle_exit);
+    struct sigaction sa;
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_handler = handle_disconnect_signal;
+    sigaction(SIGINT, &sa, NULL);
 
     if (strlen(argv[1]) + 1 > MAX_CNAME_LEN) {
         ERROR(1, 0, "Error: client name is too long\n");
     }
 
     char *name = argv[1];
-    enum socket_type mode;
 
     if (!strcmp(argv[2], "local")) {
-        mode = LOCAL;
         creat_local_socket(argv[3]);
     }
     else if (!strcmp(argv[2], "net")) {
-        mode = NET;
         creat_net_socket(strtok(argv[3], ":"), strtol(strtok(NULL, ":"), NULL, 10));
     }
     else {
@@ -133,13 +147,14 @@ int main(int argc, char *argv[]) {
     write(sockfd, &msg, sizeof(msg));
 
     while(1) {
+        msg.type = -1;
         read(sockfd, &msg, sizeof(msg));
         switch(msg.type) {
             case CONNECT:
                 handle_connect(&msg);
                 break;
             case DISCONNECT:
-                handle_disconnect();
+                handle_disconnect_signal(0);
                 break;
             case PING:
                 handle_ping();

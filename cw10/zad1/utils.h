@@ -10,6 +10,7 @@
         exit(code);                                              \
 }
 
+#define UNIX_PATH_MAX 108
 #define MAX_PLAYERS 12
 #define MAX_CNAME_LEN 50
 #define MAX_EVENTS 5
@@ -52,6 +53,7 @@ struct client {
     int taken;
     int opponent;
     int sockfd;
+    char symbol;
     char *board;
     pthread_mutex_t mutex;
 };

@@ -11,4 +11,4 @@ all: server client
 	$(CC) $(CFLAGS) $(LIBS) -o $@ $<
 
 clean:
-	rm -f main
+	rm -f server client
