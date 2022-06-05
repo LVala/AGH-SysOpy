@@ -84,10 +84,6 @@ void creat_epoll() {
     }
 }
 
-void *start_routine_ping(void *arg) {
-    pthread_exit((void *)NULL);  // TODO
-}
-
 int check_username(int client_sockfd, char *name) {
     for (int i=0; i<MAX_PLAYERS; ++i) {
         if (clients[i].taken && !strcmp(clients[i].name, name)) {
@@ -147,7 +143,7 @@ void find_opponent(int id) {
             clients[id].symbol = SYMBOL_2;
             write(clients[id].sockfd, &msg, sizeof(struct message));
 
-            clients[id].board = malloc(BOARD_SIZE * sizeof(char));  // TODO zwolnic to potem gdzies
+            clients[id].board = malloc(BOARD_SIZE * sizeof(char));
             for (int j=0; j<BOARD_SIZE; ++j) clients[id].board[j] = ' ';
             clients[i].board = clients[id].board;
 
@@ -156,16 +152,21 @@ void find_opponent(int id) {
 
             int who_starts = rand() % 2 == 0 ? id : i;
             write(clients[who_starts].sockfd, &msg, sizeof(struct message));
-    
+
             return;
         }
     }
 }
 
 void handle_disconnect(int id) {
+    pthread_mutex_lock(&clients[clients[id].opponent].mutex);
     if (clients[id].opponent != -1) {
-        // TODO wyslij wiadomosc ze przeciwnik sie rozlaczyl
+        struct message new_msg;
+        new_msg.type = OP_LEFT;
+        write(clients[clients[id].opponent].sockfd, &new_msg, sizeof(struct message));
+        return;
     }
+    pthread_mutex_unlock(&clients[clients[id].opponent].mutex);
 
     struct epoll_event epoll_event_in;
     epoll_event_in.events = EPOLLIN;
@@ -173,12 +174,41 @@ void handle_disconnect(int id) {
     epoll_ctl(clients_epollfd, EPOLL_CTL_DEL, clients[id].sockfd, &epoll_event_in);
 
     clients[id].taken = 0;
+    clients[id].opponent = -1;
     close(clients[id].sockfd);
     if (clients[id].board != NULL) {
         free(clients[id].board);
         clients[id].board = NULL;
         clients[clients[id].opponent].board = NULL;
     }
+}
+
+void *start_routine_ping(void *arg) {
+    int efd = epoll_create1(0);
+    struct message msg;
+    msg.type = PING;
+    struct epoll_event event;
+    while (1) {
+        sleep(4);
+        for (int i=0; i<MAX_PLAYERS; ++i) {
+            pthread_mutex_lock(&clients[i].mutex);
+                if (clients[i].taken) {
+                    event.events = EPOLLIN | EPOLLONESHOT;
+                    event.data.fd = clients[i].sockfd;
+                    epoll_ctl(efd, EPOLL_CTL_ADD, clients[i].sockfd, &event);
+                    write(clients[i].sockfd, &msg, sizeof(struct message));
+                    printf("Pinged client %d\n", clients[i].sockfd);
+                    int ndfs = epoll_wait(efd, &event, 1, TIMEOUT);
+                    printf("Recieved ping back from %d\n", clients[i].sockfd);
+                    if (ndfs == -1) {
+                        printf("Client with descriptor %d go timed out\n", clients[i].sockfd);
+                        handle_disconnect(i);
+                    }
+                }
+            pthread_mutex_unlock(&clients[i].mutex);
+        }
+    } 
+    pthread_exit((void *)NULL);
 }
 
 char check_line(char f1, char f2, char f3) {
@@ -209,7 +239,17 @@ void handle_move(struct message *msg) {
     if (clients[msg->id].opponent == -1) {
         ERROR(1, 0, "Error: server recieved invalid message\n");
     }
+
     pthread_mutex_lock(&clients[clients[msg->id].opponent].mutex);
+
+    if (clients[clients[msg->id].opponent].taken == 0) {
+        struct message new_msg;
+        new_msg.type = OP_LEFT;
+        write(clients[msg->id].sockfd, &new_msg, sizeof(struct message));
+        pthread_mutex_unlock(&clients[clients[msg->id].opponent].mutex);
+        return;
+    }
+
     struct message new_msg;
     clients[msg->id].board[msg->data.move-1] = clients[msg->id].symbol;
     int finish;
@@ -249,7 +289,8 @@ void *start_routine_manage_sockets(void *arg) {
                     handle_move(&msg);
                     break;
                 case PING:
-                    continue;
+                    printf("Read ping\n");
+                    break;
                 default:
                     ERROR(1, 0, "Error: received message with invalid type\n"); 
             }
@@ -310,7 +351,10 @@ void handle_exit() {
         if (clients[i].taken) {
             write(clients[i].sockfd, &msg, sizeof(struct message));
             close(clients[i].sockfd);
-            if (clients[i].board != NULL) free(clients[i].board);
+            if (clients[i].board != NULL) {
+                free(clients[i].board);
+                clients[clients[i].opponent].board = NULL;
+            }
             pthread_mutex_destroy(&clients[i].mutex);
         }
     }

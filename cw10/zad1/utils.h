@@ -18,6 +18,7 @@
 #define SEPARATOR "---+---+---\n"
 #define SYMBOL_1 'X'
 #define SYMBOL_2 'O'
+#define TIMEOUT 1000
 
 enum socket_type {
     LOCAL,
@@ -32,9 +33,10 @@ struct message {
         MOVE,
         BOARD,
         NAME_TAKEN,
-        TOO_MANY, // TODO
+        TOO_MANY,
         FINISH,
         START,
+        OP_LEFT
     } type;
     int id;
     union data {

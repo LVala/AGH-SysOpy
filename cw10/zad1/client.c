@@ -113,6 +113,16 @@ void handle_start(struct message *msg) {
     printf("Match against %s is starting! Your symbol: %c\nWait for your turn...\n", msg->data.cred.name, symbol);
 }
 
+void handle_op_left() {
+    printf("Opponent left, exiting...\n");
+    exit(0);
+}
+
+void handle_too_many() {
+    printf("Too many clients connected to server, cannot create more, exiting...\n");
+    exit(1);
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 4) {
         ERROR(1, 0, "Error: invalid number of arguments, expected 3\n");
@@ -170,6 +180,12 @@ int main(int argc, char *argv[]) {
                 break;
             case START:
                 handle_start(&msg);
+                break;
+            case OP_LEFT:
+                handle_op_left();
+                break;
+            case TOO_MANY:
+                handle_too_many();
                 break;
             default:
                 ERROR(1, 0, "Error: recieved message with invalid type\n");   
