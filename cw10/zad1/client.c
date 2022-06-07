@@ -65,6 +65,7 @@ void handle_exit() {
     msg.id = id;
     msg.type = DISCONNECT;
     write(sockfd, &msg, sizeof(struct message));
+    printf("Exiting...\n");
     shutdown(sockfd, SHUT_RDWR);
     close(sockfd);
 }
@@ -114,7 +115,7 @@ void handle_start(struct message *msg) {
 }
 
 void handle_op_left() {
-    printf("Opponent left, exiting...\n");
+    printf("Opponent left\n");
     exit(0);
 }
 
@@ -145,7 +146,9 @@ int main(int argc, char *argv[]) {
         creat_local_socket(argv[3]);
     }
     else if (!strcmp(argv[2], "net")) {
-        creat_net_socket(strtok(argv[3], ":"), strtol(strtok(NULL, ":"), NULL, 10));
+        char *address = strtok(argv[3], ":");
+        int port = strtol(strtok(NULL, ":"), NULL, 10);
+        creat_net_socket(address, port);
     }
     else {
         ERROR(1, 0, "Error: invalid second argument, expected either \"local\" or \"net\"\n");

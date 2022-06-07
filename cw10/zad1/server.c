@@ -90,7 +90,7 @@ int check_username(int client_sockfd, char *name) {
             struct message msg;
             msg.type = NAME_TAKEN;
             write(client_sockfd, &msg, sizeof(struct message));
-            printf("Name already exists, rejecting connection");
+            printf("Name already exists, rejecting connection\n");
             return 1;
         }
     }
@@ -159,28 +159,32 @@ void find_opponent(int id) {
 }
 
 void handle_disconnect(int id) {
-    pthread_mutex_lock(&clients[clients[id].opponent].mutex);
+    if (clients[id].taken == 0) return;
+
+    int opponent = clients[id].opponent;
+    pthread_mutex_lock(&clients[opponent].mutex);
     if (clients[id].opponent != -1) {
+        clients[clients[id].opponent].opponent = -1;
+        clients[id].opponent = -1;
         struct message new_msg;
         new_msg.type = OP_LEFT;
-        write(clients[clients[id].opponent].sockfd, &new_msg, sizeof(struct message));
-        return;
+        write(clients[opponent].sockfd, &new_msg, sizeof(struct message));
     }
-    pthread_mutex_unlock(&clients[clients[id].opponent].mutex);
 
     struct epoll_event epoll_event_in;
     epoll_event_in.events = EPOLLIN;
     epoll_event_in.data.fd = net_sockfd;
     epoll_ctl(clients_epollfd, EPOLL_CTL_DEL, clients[id].sockfd, &epoll_event_in);
-
+    
     clients[id].taken = 0;
-    clients[id].opponent = -1;
+    printf("DISCONNECTED CLIENT %d\n", id);
     close(clients[id].sockfd);
     if (clients[id].board != NULL) {
         free(clients[id].board);
         clients[id].board = NULL;
-        clients[clients[id].opponent].board = NULL;
+        clients[opponent].board = NULL;
     }
+    pthread_mutex_unlock(&clients[opponent].mutex);
 }
 
 void *start_routine_ping(void *arg) {
@@ -197,11 +201,11 @@ void *start_routine_ping(void *arg) {
                     event.data.fd = clients[i].sockfd;
                     epoll_ctl(efd, EPOLL_CTL_ADD, clients[i].sockfd, &event);
                     write(clients[i].sockfd, &msg, sizeof(struct message));
-                    printf("Pinged client %d\n", clients[i].sockfd);
+                    printf("Pinged client %d\n", i);
                     int ndfs = epoll_wait(efd, &event, 1, TIMEOUT);
-                    printf("Recieved ping back from %d\n", clients[i].sockfd);
+                    printf("Recieved ping back from %d\n", i);
                     if (ndfs == -1) {
-                        printf("Client with descriptor %d go timed out\n", clients[i].sockfd);
+                        printf("Client with descriptor %d go timed out\n", i);
                         handle_disconnect(i);
                     }
                 }
@@ -236,9 +240,7 @@ char check_game_status(char *board) {
 }
 
 void handle_move(struct message *msg) {
-    if (clients[msg->id].opponent == -1) {
-        ERROR(1, 0, "Error: server recieved invalid message\n");
-    }
+    if (clients[msg->id].opponent == -1) return;
 
     pthread_mutex_lock(&clients[clients[msg->id].opponent].mutex);
 
@@ -278,18 +280,19 @@ void *start_routine_manage_sockets(void *arg) {
         }
         for (int i=0; i<nfds; ++i) {
             read(events[i].data.fd, &msg, sizeof(struct message));
-            printf("Recieved message from %d\n", events[i].data.fd);
 
             pthread_mutex_lock(&clients[msg.id].mutex);
             switch (msg.type) {
                 case DISCONNECT:
+                    printf("Recieved disconect message from %d\n", msg.id);
                     handle_disconnect(msg.id);
                     break;
                 case MOVE:
+                    printf("Recieved move message from %d\n", msg.id);
                     handle_move(&msg);
                     break;
                 case PING:
-                    printf("Read ping\n");
+                    printf("Recieved ping message from %d\n", msg.id);
                     break;
                 default:
                     ERROR(1, 0, "Error: received message with invalid type\n"); 
